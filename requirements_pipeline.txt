@@ -1,0 +1,15 @@
+# Job Pipeline Requirements
+# Install with: pip install -r requirements_pipeline.txt
+
+# Core dependencies
+python-dotenv>=1.0.0
+supabase>=2.0.0
+firecrawl-py>=0.0.5
+anthropic>=0.18.0
+
+# Data processing
+pandas>=2.0.0
+openpyxl>=3.1.0
+
+# Utilities
+requests>=2.31.0

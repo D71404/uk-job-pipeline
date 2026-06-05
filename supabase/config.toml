@@ -1,0 +1,16 @@
+# Supabase Configuration
+
+[functions.scrape-jobs]
+verify_jwt = false
+
+[functions.list-reviews]
+verify_jwt = false
+
+[functions.approve-job]
+verify_jwt = false
+
+[functions.reject-job]
+verify_jwt = false
+
+[functions.job-stats]
+verify_jwt = false

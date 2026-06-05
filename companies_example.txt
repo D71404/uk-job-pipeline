@@ -1,0 +1,10 @@
+# Add companies here (Name, URL format)
+# Lines starting with # are ignored
+
+Stripe, https://stripe.com
+Airbnb, https://airbnb.com
+Notion, https://notion.so
+Figma, https://figma.com
+Linear, https://linear.app
+Vercel, https://vercel.com
+Supabase, https://supabase.com
