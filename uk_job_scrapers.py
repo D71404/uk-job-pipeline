@@ -68,23 +68,28 @@ class UKJobScrapers:
             return []
 
         prompt = f"""
-        Extract all job listings from these pages. Focus on UK-based positions in the {field} field.
+        Extract all job listings from these pages. These are UK job boards (CV Library, TotalJobs, CWJobs, Reed, Otta, Indeed, LinkedIn, etc).
 
-        For each job, extract:
-        - Title: Full job title
-        - Company: Company/organization name
-        - Location: City/region in UK (or "Remote" if applicable)
-        - Description: Complete job description including requirements and responsibilities
-        - URL: Direct link to the job application page
-        - Posted Date: When the job was posted (if shown)
-        - Salary: Salary range or rate (if mentioned)
+        For each job posting found, extract:
+        - title: The job title/role name (e.g., "Senior AI Engineer", "Marketing Manager")
+        - company: Company or organization name
+        - location: City/region in UK, or "Remote", or "Hybrid"
+        - description: Complete job description text including:
+          * Job responsibilities
+          * Required qualifications and skills
+          * Benefits and perks
+          * ANY mention of visa sponsorship (tier 2, skilled worker visa, sponsorship available, etc.)
+        - url: Direct URL to the job posting or application page
+        - posted_date: When posted (if shown)
+        - salary: Salary range or rate if mentioned
 
-        Important:
-        - Only include jobs based in the United Kingdom
-        - Look for any mention of visa sponsorship in the description
-        - If a job explicitly states "visa sponsorship available" or similar, include that in the description
+        CRITICAL INSTRUCTIONS:
+        1. Only extract jobs based in the United Kingdom
+        2. ALWAYS include the full description text - do not truncate
+        3. If the job mentions visa sponsorship, tier 2 visa, skilled worker visa, or "right to work sponsorship", make sure this is clearly stated in the description field
+        4. Extract the actual job posting URL (not the search results page)
 
-        Return an empty array if no jobs found.
+        Return an empty array if no job postings are found on these pages.
         """
 
         all_jobs = []
@@ -246,14 +251,17 @@ class UKJobScrapers:
         """
         Scrape LinkedIn UK for jobs.
 
+        NOTE: LinkedIn has aggressive anti-bot protections. May fail frequently.
+
         Args:
             field: Job field
             keywords: Search keywords
 
         Returns:
-            List of job dictionaries
+            List of job dictionaries (empty if blocked)
         """
         print(f"\n🔍 Scraping LinkedIn UK for {field}...")
+        print(f"   ⚠️  Warning: LinkedIn has strong anti-bot protections")
 
         base_urls = []
         for keyword in keywords:
@@ -267,8 +275,7 @@ class UKJobScrapers:
                 print(f"   Crawling: {url}")
                 result = self.firecrawl.crawl(
                     url,
-                    limit=40,
-                    include_paths=['jobs/view'],
+                    limit=20,  # Reduced limit to avoid detection
                     scrape_options={
                         'formats': ['markdown'],
                         'only_main_content': True
@@ -284,10 +291,74 @@ class UKJobScrapers:
                             all_job_urls.append(page_url)
 
                 # Rate limiting: Add delay between crawls
+                time.sleep(4)
+
+            except Exception as e:
+                # Graceful handling of LinkedIn blocking
+                error_msg = str(e).lower()
+                if '403' in error_msg or 'forbidden' in error_msg or 'blocked' in error_msg:
+                    print(f"   🚫 LinkedIn blocked scraping today, moving to next portal")
+                elif 'timeout' in error_msg:
+                    print(f"   ⏱️  LinkedIn timeout, moving to next portal")
+                else:
+                    print(f"   ⚠️  LinkedIn crawl failed: {e}")
+
+                time.sleep(3)
+                continue
+
+        if len(all_job_urls) == 0:
+            print(f"   ℹ️  No jobs found on LinkedIn (likely blocked)")
+            return []
+
+        print(f"   Found {len(all_job_urls)} job URLs")
+
+        if all_job_urls:
+            return self._extract_jobs_from_urls(all_job_urls[:15], field)  # Reduced batch
+        return []
+
+    def scrape_cv_library(self, field: str, keywords: List[str]) -> List[Dict[str, Any]]:
+        """
+        Scrape CV Library for jobs.
+
+        Args:
+            field: Job field
+            keywords: Search keywords
+
+        Returns:
+            List of job dictionaries
+        """
+        print(f"\n🔍 Scraping CV Library for {field}...")
+
+        base_urls = []
+        for keyword in keywords:
+            search_url = f"https://www.cv-library.co.uk/search-jobs?q={keyword.replace(' ', '+')}&geo=United+Kingdom"
+            base_urls.append(search_url)
+
+        all_job_urls = []
+        for url in base_urls:
+            try:
+                print(f"   Crawling: {url}")
+                result = self.firecrawl.crawl(
+                    url,
+                    limit=40,
+                    scrape_options={
+                        'formats': ['markdown'],
+                        'only_main_content': True
+                    }
+                )
+
+                if result and hasattr(result, 'data'):
+                    pages = result.data or []
+                    for page in pages:
+                        metadata = page.get('metadata', {}) if isinstance(page, dict) else {}
+                        page_url = metadata.get('sourceURL', '') or metadata.get('url', '')
+                        if ('/job/' in page_url or '/vacancy/' in page_url) and page_url not in all_job_urls:
+                            all_job_urls.append(page_url)
+
                 time.sleep(3)
 
             except Exception as e:
-                print(f"   ⚠️  Crawl failed for {url}: {e}")
+                print(f"   ⚠️  CV Library crawl failed: {e}")
                 time.sleep(3)
                 continue
 
@@ -295,6 +366,179 @@ class UKJobScrapers:
 
         if all_job_urls:
             return self._extract_jobs_from_urls(all_job_urls[:30], field)
+        return []
+
+    def scrape_totaljobs(self, field: str, keywords: List[str]) -> List[Dict[str, Any]]:
+        """
+        Scrape TotalJobs for jobs.
+
+        Args:
+            field: Job field
+            keywords: Search keywords
+
+        Returns:
+            List of job dictionaries
+        """
+        print(f"\n🔍 Scraping TotalJobs for {field}...")
+
+        base_urls = []
+        for keyword in keywords:
+            search_url = f"https://www.totaljobs.com/jobs/{keyword.lower().replace(' ', '-')}?s=header"
+            base_urls.append(search_url)
+
+        all_job_urls = []
+        for url in base_urls:
+            try:
+                print(f"   Crawling: {url}")
+                result = self.firecrawl.crawl(
+                    url,
+                    limit=40,
+                    scrape_options={
+                        'formats': ['markdown'],
+                        'only_main_content': True
+                    }
+                )
+
+                if result and hasattr(result, 'data'):
+                    pages = result.data or []
+                    for page in pages:
+                        metadata = page.get('metadata', {}) if isinstance(page, dict) else {}
+                        page_url = metadata.get('sourceURL', '') or metadata.get('url', '')
+                        if '/job/' in page_url and page_url not in all_job_urls:
+                            all_job_urls.append(page_url)
+
+                time.sleep(3)
+
+            except Exception as e:
+                print(f"   ⚠️  TotalJobs crawl failed: {e}")
+                time.sleep(3)
+                continue
+
+        print(f"   Found {len(all_job_urls)} job URLs")
+
+        if all_job_urls:
+            return self._extract_jobs_from_urls(all_job_urls[:30], field)
+        return []
+
+    def scrape_cwjobs(self, field: str, keywords: List[str]) -> List[Dict[str, Any]]:
+        """
+        Scrape CWJobs (great for Tech/AI roles) for jobs.
+
+        Args:
+            field: Job field
+            keywords: Search keywords
+
+        Returns:
+            List of job dictionaries
+        """
+        print(f"\n🔍 Scraping CWJobs for {field}...")
+
+        base_urls = []
+        for keyword in keywords:
+            search_url = f"https://www.cwjobs.co.uk/jobs/{keyword.lower().replace(' ', '-')}/in-united-kingdom"
+            base_urls.append(search_url)
+
+        all_job_urls = []
+        for url in base_urls:
+            try:
+                print(f"   Crawling: {url}")
+                result = self.firecrawl.crawl(
+                    url,
+                    limit=40,
+                    scrape_options={
+                        'formats': ['markdown'],
+                        'only_main_content': True
+                    }
+                )
+
+                if result and hasattr(result, 'data'):
+                    pages = result.data or []
+                    for page in pages:
+                        metadata = page.get('metadata', {}) if isinstance(page, dict) else {}
+                        page_url = metadata.get('sourceURL', '') or metadata.get('url', '')
+                        if '/job/' in page_url and page_url not in all_job_urls:
+                            all_job_urls.append(page_url)
+
+                time.sleep(3)
+
+            except Exception as e:
+                print(f"   ⚠️  CWJobs crawl failed: {e}")
+                time.sleep(3)
+                continue
+
+        print(f"   Found {len(all_job_urls)} job URLs")
+
+        if all_job_urls:
+            return self._extract_jobs_from_urls(all_job_urls[:30], field)
+        return []
+
+    def scrape_indeed_uk(self, field: str, keywords: List[str]) -> List[Dict[str, Any]]:
+        """
+        Scrape Indeed UK for jobs.
+
+        NOTE: Indeed has strong anti-bot protections. High risk of blocking.
+
+        Args:
+            field: Job field
+            keywords: Search keywords
+
+        Returns:
+            List of job dictionaries (empty if blocked)
+        """
+        print(f"\n🔍 Scraping Indeed UK for {field}...")
+        print(f"   ⚠️  Warning: Indeed has aggressive bot detection")
+
+        base_urls = []
+        for keyword in keywords:
+            search_url = f"https://uk.indeed.com/jobs?q={keyword.replace(' ', '+')}&l=United+Kingdom"
+            base_urls.append(search_url)
+
+        all_job_urls = []
+        for url in base_urls:
+            try:
+                print(f"   Crawling: {url}")
+                result = self.firecrawl.crawl(
+                    url,
+                    limit=15,  # Very reduced limit to avoid detection
+                    scrape_options={
+                        'formats': ['markdown'],
+                        'only_main_content': True
+                    }
+                )
+
+                if result and hasattr(result, 'data'):
+                    pages = result.data or []
+                    for page in pages:
+                        metadata = page.get('metadata', {}) if isinstance(page, dict) else {}
+                        page_url = metadata.get('sourceURL', '') or metadata.get('url', '')
+                        if ('/viewjob' in page_url or '/rc/clk' in page_url) and page_url not in all_job_urls:
+                            all_job_urls.append(page_url)
+
+                time.sleep(5)  # Longer delay for Indeed
+
+            except Exception as e:
+                # Graceful handling of Indeed blocking
+                error_msg = str(e).lower()
+                if '403' in error_msg or 'forbidden' in error_msg or 'blocked' in error_msg:
+                    print(f"   🚫 Indeed blocked scraping today, moving to next portal")
+                elif 'timeout' in error_msg:
+                    print(f"   ⏱️  Indeed timeout, moving to next portal")
+                elif 'captcha' in error_msg or 'recaptcha' in error_msg:
+                    print(f"   🤖 Indeed showing CAPTCHA, moving to next portal")
+                else:
+                    print(f"   ⚠️  Indeed crawl failed: {e}")
+
+                time.sleep(3)
+                continue
+
+        if len(all_job_urls) == 0:
+            print(f"   ℹ️  No jobs found on Indeed (likely blocked)")
+            return []
+
+        print(f"   Found {len(all_job_urls)} job URLs")
+
+        if all_job_urls:
+            return self._extract_jobs_from_urls(all_job_urls[:10], field)  # Very limited batch
         return []
 
     # ============================================
@@ -499,9 +743,29 @@ class UKJobScrapers:
             print(f"⚠️  Reed scraping failed: {e}")
 
         try:
+            all_results['AI_ENGINEER'].extend(self.scrape_cv_library('AI_ENGINEER', ai_keywords))
+        except Exception as e:
+            print(f"⚠️  CV Library scraping failed: {e}")
+
+        try:
+            all_results['AI_ENGINEER'].extend(self.scrape_totaljobs('AI_ENGINEER', ai_keywords))
+        except Exception as e:
+            print(f"⚠️  TotalJobs scraping failed: {e}")
+
+        try:
+            all_results['AI_ENGINEER'].extend(self.scrape_cwjobs('AI_ENGINEER', ai_keywords))
+        except Exception as e:
+            print(f"⚠️  CWJobs scraping failed: {e}")
+
+        try:
             all_results['AI_ENGINEER'].extend(self.scrape_linkedin_uk('AI_ENGINEER', ai_keywords))
         except Exception as e:
             print(f"⚠️  LinkedIn scraping failed: {e}")
+
+        try:
+            all_results['AI_ENGINEER'].extend(self.scrape_indeed_uk('AI_ENGINEER', ai_keywords))
+        except Exception as e:
+            print(f"⚠️  Indeed scraping failed: {e}")
 
         # Marketing
         print("\n" + "=" * 60)
@@ -521,9 +785,24 @@ class UKJobScrapers:
             print(f"⚠️  Reed scraping failed: {e}")
 
         try:
+            all_results['MARKETING'].extend(self.scrape_cv_library('MARKETING', marketing_keywords))
+        except Exception as e:
+            print(f"⚠️  CV Library scraping failed: {e}")
+
+        try:
+            all_results['MARKETING'].extend(self.scrape_totaljobs('MARKETING', marketing_keywords))
+        except Exception as e:
+            print(f"⚠️  TotalJobs scraping failed: {e}")
+
+        try:
             all_results['MARKETING'].extend(self.scrape_linkedin_uk('MARKETING', marketing_keywords))
         except Exception as e:
             print(f"⚠️  LinkedIn scraping failed: {e}")
+
+        try:
+            all_results['MARKETING'].extend(self.scrape_indeed_uk('MARKETING', marketing_keywords))
+        except Exception as e:
+            print(f"⚠️  Indeed scraping failed: {e}")
 
         # PhD
         print("\n" + "=" * 60)
@@ -561,7 +840,25 @@ class UKJobScrapers:
         print("\n" + "=" * 60)
         print("SCRAPING SUMMARY")
         print("=" * 60)
+        total_all = 0
         for field, jobs in all_results.items():
-            print(f"  {field}: {len(jobs)} jobs found")
+            count = len(jobs)
+            total_all += count
+            print(f"  {field}: {count} jobs found")
+
+        print(f"\n  TOTAL: {total_all} jobs across all fields")
+        print("\n  Job Portals Scraped:")
+        print("    ✓ Otta (Startups/Tech)")
+        print("    ✓ Reed UK (General)")
+        print("    ✓ CV Library (General)")
+        print("    ✓ TotalJobs (General)")
+        print("    ✓ CWJobs (Tech/IT)")
+        print("    ✓ LinkedIn UK (May be blocked)")
+        print("    ✓ Indeed UK (May be blocked)")
+        print("    ✓ FindAPhD (PhD only)")
+        print("    ✓ Jobs.ac.uk (Academia)")
+        print("    ✓ TES (Teaching)")
+        print("    ✓ Gov Teaching Vacancies (Teaching)")
+        print("=" * 60)
 
         return all_results
