@@ -1,7 +1,17 @@
-firecrawl-py>=1.0.0
-pandas>=2.0.0
-openpyxl>=3.1.0
+# Job Pipeline Requirements for Railway Deployment
+# Core dependencies
 python-dotenv>=1.0.0
 supabase>=2.0.0
+firecrawl-py>=0.0.5
+anthropic>=0.18.0
+
+# Data processing
+pandas>=2.0.0
+openpyxl>=3.1.0
+
+# Utilities
+requests>=2.31.0
+
+# Optional: API server dependencies (if needed)
 fastapi>=0.100.0
 uvicorn>=0.23.0

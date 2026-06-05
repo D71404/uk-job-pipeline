@@ -1,0 +1,21 @@
+# Don't copy these to Docker image
+.env
+*.log
+logs/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+env/
+ENV/
+.venv
+*.xlsx
+*.csv
+checkpoints/
+node_modules/
+.DS_Store
+.git/
+.gitignore
+temporary screenshots/
