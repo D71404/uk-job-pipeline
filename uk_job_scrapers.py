@@ -5,6 +5,7 @@ Scrapes job postings from major UK job boards using Firecrawl
 
 import os
 import re
+import time
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 from dotenv import load_dotenv
@@ -112,8 +113,14 @@ class UKJobScrapers:
                 all_jobs.extend(jobs)
                 print(f"   Found {len(jobs)} jobs in batch")
 
+                # Rate limiting: Add delay between batches to avoid hitting API limits
+                if i + batch_size < len(urls):
+                    print(f"   Waiting 4 seconds before next batch...")
+                    time.sleep(4)
+
             except Exception as e:
                 print(f"   ❌ Batch extraction failed: {e}")
+                time.sleep(3)  # Even on error, wait before retrying
                 continue
 
         return all_jobs
@@ -164,8 +171,12 @@ class UKJobScrapers:
                         if '/jobs/' in page_url and page_url not in all_job_urls:
                             all_job_urls.append(page_url)
 
+                # Rate limiting: Add delay between crawls
+                time.sleep(3)
+
             except Exception as e:
                 print(f"   ⚠️  Crawl failed for {url}: {e}")
+                time.sleep(3)
                 continue
 
         print(f"   Found {len(all_job_urls)} job URLs")
@@ -201,7 +212,7 @@ class UKJobScrapers:
                 result = self.firecrawl.crawl(
                     url,
                     limit=50,
-                    includePaths=['jobs'],
+                    include_paths=['jobs'],
                     scrape_options={
                         'formats': ['markdown'],
                         'only_main_content': True
@@ -217,8 +228,12 @@ class UKJobScrapers:
                         if '/jobs/' in page_url and re.search(r'/jobs/\d+/', page_url) and page_url not in all_job_urls:
                             all_job_urls.append(page_url)
 
+                # Rate limiting: Add delay between crawls
+                time.sleep(3)
+
             except Exception as e:
                 print(f"   ⚠️  Crawl failed for {url}: {e}")
+                time.sleep(3)
                 continue
 
         print(f"   Found {len(all_job_urls)} job URLs")
@@ -253,7 +268,7 @@ class UKJobScrapers:
                 result = self.firecrawl.crawl(
                     url,
                     limit=40,
-                    includePaths=['jobs/view'],
+                    include_paths=['jobs/view'],
                     scrape_options={
                         'formats': ['markdown'],
                         'only_main_content': True
@@ -268,8 +283,12 @@ class UKJobScrapers:
                         if '/jobs/view/' in page_url and page_url not in all_job_urls:
                             all_job_urls.append(page_url)
 
+                # Rate limiting: Add delay between crawls
+                time.sleep(3)
+
             except Exception as e:
                 print(f"   ⚠️  Crawl failed for {url}: {e}")
+                time.sleep(3)
                 continue
 
         print(f"   Found {len(all_job_urls)} job URLs")
@@ -293,7 +312,7 @@ class UKJobScrapers:
             result = self.firecrawl.crawl(
                 url,
                 limit=60,
-                includePaths=['phd', 'project'],
+                include_paths=['phd', 'project'],
                 scrape_options={
                     'formats': ['markdown'],
                     'only_main_content': True
@@ -331,7 +350,7 @@ class UKJobScrapers:
             result = self.firecrawl.crawl(
                 url,
                 limit=50,
-                includePaths=['job', 'search'],
+                include_paths=['job', 'search'],
                 scrape_options={
                     'formats': ['markdown'],
                     'only_main_content': True
@@ -377,7 +396,7 @@ class UKJobScrapers:
                 result = self.firecrawl.crawl(
                     url,
                     limit=50,
-                    includePaths=['jobs/vacancy'],
+                    include_paths=['jobs/vacancy'],
                     scrape_options={
                         'formats': ['markdown'],
                         'only_main_content': True
@@ -413,7 +432,7 @@ class UKJobScrapers:
             result = self.firecrawl.crawl(
                 url,
                 limit=60,
-                includePaths=['jobs'],
+                include_paths=['jobs'],
                 scrape_options={
                     'formats': ['markdown'],
                     'only_main_content': True

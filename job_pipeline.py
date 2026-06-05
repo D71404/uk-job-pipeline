@@ -78,7 +78,16 @@ class JobPipeline:
         try:
             results = self.scrapers.scrape_all_fields()
             total_jobs = sum(len(jobs) for jobs in results.values())
-            logger.info(f"\n✅ Scraping complete! Found {total_jobs} total jobs")
+
+            if total_jobs == 0:
+                logger.warning(f"\n⚠️  No jobs found during scraping. This could be due to:")
+                logger.warning("   - Job portals being temporarily unavailable")
+                logger.warning("   - Rate limiting by job sites")
+                logger.warning("   - Changes to job portal website structure")
+                logger.warning("   Pipeline will exit gracefully.")
+            else:
+                logger.info(f"\n✅ Scraping complete! Found {total_jobs} total jobs")
+
             return results
         except Exception as e:
             logger.error(f"❌ Scraping failed: {e}")
@@ -133,7 +142,13 @@ class JobPipeline:
 
         logger.info(f"\n✅ Sponsorship filtering complete")
         logger.info(f"   Checked: {total_checked} jobs")
-        logger.info(f"   Sponsored: {total_sponsored} jobs ({total_sponsored/total_checked*100:.1f}%)")
+
+        # Safety check to prevent division by zero
+        if total_checked > 0:
+            percentage = (total_sponsored / total_checked) * 100
+            logger.info(f"   Sponsored: {total_sponsored} jobs ({percentage:.1f}%)")
+        else:
+            logger.info(f"   Sponsored: {total_sponsored} jobs (0 jobs checked)")
 
         return sponsored_jobs
 
@@ -318,6 +333,21 @@ class JobPipeline:
         # Step 1: Scrape jobs
         scraped_jobs = self.scrape_jobs()
         total_scraped = sum(len(jobs) for jobs in scraped_jobs.values())
+
+        # Early exit if no jobs scraped
+        if total_scraped == 0:
+            logger.info("\n⚠️  No jobs scraped. Exiting pipeline gracefully.")
+            logger.info("=" * 70)
+            return {
+                'timestamp': datetime.now().isoformat(),
+                'duration_seconds': (datetime.now() - start_time).total_seconds(),
+                'total_scraped': 0,
+                'total_sponsored': 0,
+                'jobs_inserted': 0,
+                'jobs_skipped': 0,
+                'cvs_tailored': 0,
+                'status': 'no_jobs_found'
+            }
 
         # Step 2: Filter for sponsorship
         sponsored_jobs = self.filter_sponsored_jobs(scraped_jobs)
