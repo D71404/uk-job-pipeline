@@ -1,5 +1,5 @@
 # Dockerfile for Railway Deployment
-# Automated UK Job Application Pipeline
+# FastAPI Web Server for Job Pipeline
 
 FROM python:3.11-slim
 
@@ -10,6 +10,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     gcc \
     git \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
@@ -31,6 +32,14 @@ RUN mkdir -p logs
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
+ENV PORT=8000
 
-# Run the pipeline
-CMD ["python3", "job_pipeline.py"]
+# Expose port
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:${PORT}/health || exit 1
+
+# Run FastAPI server
+CMD uvicorn main:app --host 0.0.0.0 --port ${PORT}

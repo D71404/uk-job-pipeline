@@ -6,6 +6,7 @@ Scrapes job postings from major UK job boards using Firecrawl
 import os
 import re
 import time
+import requests
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 from dotenv import load_dotenv
@@ -45,13 +46,17 @@ class UKJobScrapers:
         "required": ["jobs"]
     }
 
-    def __init__(self, api_key: Optional[str] = None):
-        """Initialize Firecrawl client."""
+    def __init__(self, api_key: Optional[str] = None, crust_api_key: Optional[str] = None):
+        """Initialize Firecrawl and Crust API clients."""
         self.api_key = api_key or os.getenv('FIRECRAWL_API_KEY')
         if not self.api_key:
             raise ValueError("FIRECRAWL_API_KEY required in .env")
 
         self.firecrawl = Firecrawl(api_key=self.api_key)
+
+        # Crust API for LinkedIn (more reliable than Firecrawl for LinkedIn)
+        self.crust_api_key = crust_api_key or os.getenv('CRUST_API_KEY')
+        self.crust_base_url = "https://api.getcrust.com/v1"
 
     def _extract_jobs_from_urls(self, urls: List[str], field: str) -> List[Dict[str, Any]]:
         """
@@ -249,72 +254,94 @@ class UKJobScrapers:
 
     def scrape_linkedin_uk(self, field: str, keywords: List[str]) -> List[Dict[str, Any]]:
         """
-        Scrape LinkedIn UK for jobs.
+        Scrape LinkedIn UK for jobs using Crust API (more reliable than Firecrawl).
 
-        NOTE: LinkedIn has aggressive anti-bot protections. May fail frequently.
+        Uses Crust API which handles LinkedIn's anti-bot protections professionally.
 
         Args:
             field: Job field
             keywords: Search keywords
 
         Returns:
-            List of job dictionaries (empty if blocked)
+            List of job dictionaries
         """
-        print(f"\n🔍 Scraping LinkedIn UK for {field}...")
-        print(f"   ⚠️  Warning: LinkedIn has strong anti-bot protections")
+        print(f"\n🔍 Scraping LinkedIn UK for {field} (via Crust API)...")
 
-        base_urls = []
-        for keyword in keywords:
-            # LinkedIn job search with UK location filter
-            search_url = f"https://www.linkedin.com/jobs/search/?keywords={keyword.replace(' ', '%20')}&location=United%20Kingdom"
-            base_urls.append(search_url)
-
-        all_job_urls = []
-        for url in base_urls:
-            try:
-                print(f"   Crawling: {url}")
-                result = self.firecrawl.crawl(
-                    url,
-                    limit=20,  # Reduced limit to avoid detection
-                    scrape_options={
-                        'formats': ['markdown'],
-                        'only_main_content': True
-                    }
-                )
-
-                if result and hasattr(result, 'data'):
-                    pages = result.data or []
-                    for page in pages:
-                        metadata = page.get('metadata', {}) if isinstance(page, dict) else {}
-                        page_url = metadata.get('sourceURL', '') or metadata.get('url', '')
-                        if '/jobs/view/' in page_url and page_url not in all_job_urls:
-                            all_job_urls.append(page_url)
-
-                # Rate limiting: Add delay between crawls
-                time.sleep(4)
-
-            except Exception as e:
-                # Graceful handling of LinkedIn blocking
-                error_msg = str(e).lower()
-                if '403' in error_msg or 'forbidden' in error_msg or 'blocked' in error_msg:
-                    print(f"   🚫 LinkedIn blocked scraping today, moving to next portal")
-                elif 'timeout' in error_msg:
-                    print(f"   ⏱️  LinkedIn timeout, moving to next portal")
-                else:
-                    print(f"   ⚠️  LinkedIn crawl failed: {e}")
-
-                time.sleep(3)
-                continue
-
-        if len(all_job_urls) == 0:
-            print(f"   ℹ️  No jobs found on LinkedIn (likely blocked)")
+        # If Crust API key not available, fall back to Firecrawl (less reliable)
+        if not self.crust_api_key:
+            print(f"   ⚠️  CRUST_API_KEY not set, skipping LinkedIn")
+            print(f"   ℹ️  Set CRUST_API_KEY in .env to enable LinkedIn scraping")
             return []
 
-        print(f"   Found {len(all_job_urls)} job URLs")
+        all_jobs = []
 
-        if all_job_urls:
-            return self._extract_jobs_from_urls(all_job_urls[:15], field)  # Reduced batch
-        return []
+        for keyword in keywords:
+            try:
+                print(f"   Searching LinkedIn for: {keyword}")
+
+                # Crust API endpoint for LinkedIn job search
+                headers = {
+                    "Authorization": f"Bearer {self.crust_api_key}",
+                    "Content-Type": "application/json"
+                }
+
+                payload = {
+                    "keywords": keyword,
+                    "location": "United Kingdom",
+                    "limit": 25  # Jobs per keyword
+                }
+
+                # Call Crust API
+                response = requests.post(
+                    f"{self.crust_base_url}/linkedin/jobs/search",
+                    headers=headers,
+                    json=payload,
+                    timeout=30
+                )
+
+                if response.status_code == 200:
+                    data = response.json()
+                    jobs = data.get('jobs', [])
+
+                    # Transform Crust response to our format
+                    for job in jobs:
+                        transformed = {
+                            'title': job.get('title', ''),
+                            'company': job.get('company', ''),
+                            'location': job.get('location', ''),
+                            'description': job.get('description', ''),
+                            'url': job.get('url', ''),
+                            'posted_date': job.get('posted_date', ''),
+                            'salary': job.get('salary', '')
+                        }
+                        all_jobs.append(transformed)
+
+                    print(f"   ✓ Found {len(jobs)} jobs via Crust API")
+
+                elif response.status_code == 401:
+                    print(f"   ❌ Invalid CRUST_API_KEY")
+                    break
+
+                elif response.status_code == 429:
+                    print(f"   ⏱️  Crust API rate limit reached, pausing...")
+                    time.sleep(60)
+
+                else:
+                    print(f"   ⚠️  Crust API returned status {response.status_code}")
+
+                # Rate limiting between keywords
+                time.sleep(2)
+
+            except requests.exceptions.Timeout:
+                print(f"   ⏱️  Crust API timeout for keyword: {keyword}")
+                continue
+
+            except Exception as e:
+                print(f"   ⚠️  LinkedIn scraping error: {e}")
+                continue
+
+        print(f"   Total LinkedIn jobs found: {len(all_jobs)}")
+        return all_jobs
 
     def scrape_cv_library(self, field: str, keywords: List[str]) -> List[Dict[str, Any]]:
         """
