@@ -18,7 +18,12 @@ from dotenv import load_dotenv
 
 from job_pipeline import JobPipeline
 
-load_dotenv()
+# Load .env file if it exists (Railway injects vars directly, so this is optional)
+try:
+    load_dotenv()
+except Exception as e:
+    # Silently continue - Railway injects environment variables directly
+    pass
 
 # Setup logging
 logging.basicConfig(
@@ -42,9 +47,13 @@ pipeline_status = {
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown events."""
+    port = os.getenv('PORT', '8000')
     logger.info("🚀 Job Pipeline API starting up...")
     logger.info(f"   Environment: {os.getenv('RAILWAY_ENVIRONMENT', 'local')}")
+    logger.info(f"   Host: 0.0.0.0")
+    logger.info(f"   Port: {port}")
     logger.info(f"   API ready at: /api/trigger-pipeline")
+    logger.info(f"   Health check: /health")
     yield
     logger.info("👋 Job Pipeline API shutting down...")
 
