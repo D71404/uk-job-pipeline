@@ -32,14 +32,10 @@ RUN mkdir -p logs
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
-ENV PORT=8000
 
-# Expose port (Railway will use dynamic port)
+# Expose port (Railway will inject PORT dynamically)
 EXPOSE 8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:$PORT/health || exit 1
-
-# Run FastAPI server (Railway's startCommand in railway.json will override this)
-CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port $PORT"]
+# Run FastAPI server
+# Railway will override this with startCommand from railway.json
+CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}
