@@ -738,6 +738,8 @@ class UKJobScrapers:
         """
         Scrape all job portals for all fields.
 
+        CURRENTLY FOCUSED ON TEACHING ONLY (AI_ENGINEER, MARKETING, PHD deactivated)
+
         Returns:
             Dictionary mapping field names to lists of jobs
         """
@@ -749,119 +751,144 @@ class UKJobScrapers:
         }
 
         print("=" * 60)
-        print("🚀 Starting UK Job Portal Scraping")
+        print("🚀 Starting UK Job Portal Scraping (TEACHING ONLY)")
         print("=" * 60)
 
-        # AI Engineer
+        # ============================================
+        # AI Engineer - DEACTIVATED
+        # ============================================
+        # print("\n" + "=" * 60)
+        # print("AI ENGINEER JOBS")
+        # print("=" * 60)
+        #
+        # ai_keywords = ['AI Engineer', 'Machine Learning Engineer', 'Data Scientist', 'ML Engineer']
+        #
+        # try:
+        #     all_results['AI_ENGINEER'].extend(self.scrape_otta('AI_ENGINEER', ai_keywords))
+        # except Exception as e:
+        #     print(f"⚠️  Otta scraping failed: {e}")
+        #
+        # try:
+        #     all_results['AI_ENGINEER'].extend(self.scrape_reed('AI_ENGINEER', ai_keywords))
+        # except Exception as e:
+        #     print(f"⚠️  Reed scraping failed: {e}")
+        #
+        # try:
+        #     all_results['AI_ENGINEER'].extend(self.scrape_cv_library('AI_ENGINEER', ai_keywords))
+        # except Exception as e:
+        #     print(f"⚠️  CV Library scraping failed: {e}")
+        #
+        # try:
+        #     all_results['AI_ENGINEER'].extend(self.scrape_totaljobs('AI_ENGINEER', ai_keywords))
+        # except Exception as e:
+        #     print(f"⚠️  TotalJobs scraping failed: {e}")
+        #
+        # try:
+        #     all_results['AI_ENGINEER'].extend(self.scrape_cwjobs('AI_ENGINEER', ai_keywords))
+        # except Exception as e:
+        #     print(f"⚠️  CWJobs scraping failed: {e}")
+        #
+        # try:
+        #     all_results['AI_ENGINEER'].extend(self.scrape_linkedin_uk('AI_ENGINEER', ai_keywords))
+        # except Exception as e:
+        #     print(f"⚠️  LinkedIn scraping failed: {e}")
+        #
+        # try:
+        #     all_results['AI_ENGINEER'].extend(self.scrape_indeed_uk('AI_ENGINEER', ai_keywords))
+        # except Exception as e:
+        #     print(f"⚠️  Indeed scraping failed: {e}")
+
+        # ============================================
+        # Marketing - DEACTIVATED
+        # ============================================
+        # print("\n" + "=" * 60)
+        # print("MARKETING JOBS")
+        # print("=" * 60)
+        #
+        # marketing_keywords = ['Marketing Executive', 'Digital Marketing', 'Marketing Manager', 'Growth Marketing']
+        #
+        # try:
+        #     all_results['MARKETING'].extend(self.scrape_otta('MARKETING', marketing_keywords))
+        # except Exception as e:
+        #     print(f"⚠️  Otta scraping failed: {e}")
+        #
+        # try:
+        #     all_results['MARKETING'].extend(self.scrape_reed('MARKETING', marketing_keywords))
+        # except Exception as e:
+        #     print(f"⚠️  Reed scraping failed: {e}")
+        #
+        # try:
+        #     all_results['MARKETING'].extend(self.scrape_cv_library('MARKETING', marketing_keywords))
+        # except Exception as e:
+        #     print(f"⚠️  CV Library scraping failed: {e}")
+        #
+        # try:
+        #     all_results['MARKETING'].extend(self.scrape_totaljobs('MARKETING', marketing_keywords))
+        # except Exception as e:
+        #     print(f"⚠️  TotalJobs scraping failed: {e}")
+        #
+        # try:
+        #     all_results['MARKETING'].extend(self.scrape_linkedin_uk('MARKETING', marketing_keywords))
+        # except Exception as e:
+        #     print(f"⚠️  LinkedIn scraping failed: {e}")
+        #
+        # try:
+        #     all_results['MARKETING'].extend(self.scrape_indeed_uk('MARKETING', marketing_keywords))
+        # except Exception as e:
+        #     print(f"⚠️  Indeed scraping failed: {e}")
+
+        # ============================================
+        # PhD - DEACTIVATED
+        # ============================================
+        # print("\n" + "=" * 60)
+        # print("PHD POSITIONS")
+        # print("=" * 60)
+        #
+        # try:
+        #     all_results['PHD'].extend(self.scrape_findaphd())
+        # except Exception as e:
+        #     print(f"⚠️  FindAPhD scraping failed: {e}")
+        #
+        # try:
+        #     all_results['PHD'].extend(self.scrape_jobs_ac_uk())
+        # except Exception as e:
+        #     print(f"⚠️  Jobs.ac.uk scraping failed: {e}")
+
+        # ============================================
+        # Teaching - ACTIVE (Sequential with delays)
+        # ============================================
         print("\n" + "=" * 60)
-        print("AI ENGINEER JOBS")
+        print("TEACHING JOBS (ACTIVE)")
         print("=" * 60)
 
-        ai_keywords = ['AI Engineer', 'Machine Learning Engineer', 'Data Scientist', 'ML Engineer']
+        teaching_keywords = ['Maths Teacher', 'Business Teacher']
 
-        try:
-            all_results['AI_ENGINEER'].extend(self.scrape_otta('AI_ENGINEER', ai_keywords))
-        except Exception as e:
-            print(f"⚠️  Otta scraping failed: {e}")
-
-        try:
-            all_results['AI_ENGINEER'].extend(self.scrape_reed('AI_ENGINEER', ai_keywords))
-        except Exception as e:
-            print(f"⚠️  Reed scraping failed: {e}")
-
-        try:
-            all_results['AI_ENGINEER'].extend(self.scrape_cv_library('AI_ENGINEER', ai_keywords))
-        except Exception as e:
-            print(f"⚠️  CV Library scraping failed: {e}")
-
-        try:
-            all_results['AI_ENGINEER'].extend(self.scrape_totaljobs('AI_ENGINEER', ai_keywords))
-        except Exception as e:
-            print(f"⚠️  TotalJobs scraping failed: {e}")
-
-        try:
-            all_results['AI_ENGINEER'].extend(self.scrape_cwjobs('AI_ENGINEER', ai_keywords))
-        except Exception as e:
-            print(f"⚠️  CWJobs scraping failed: {e}")
-
-        try:
-            all_results['AI_ENGINEER'].extend(self.scrape_linkedin_uk('AI_ENGINEER', ai_keywords))
-        except Exception as e:
-            print(f"⚠️  LinkedIn scraping failed: {e}")
-
-        try:
-            all_results['AI_ENGINEER'].extend(self.scrape_indeed_uk('AI_ENGINEER', ai_keywords))
-        except Exception as e:
-            print(f"⚠️  Indeed scraping failed: {e}")
-
-        # Marketing
-        print("\n" + "=" * 60)
-        print("MARKETING JOBS")
-        print("=" * 60)
-
-        marketing_keywords = ['Marketing Executive', 'Digital Marketing', 'Marketing Manager', 'Growth Marketing']
-
-        try:
-            all_results['MARKETING'].extend(self.scrape_otta('MARKETING', marketing_keywords))
-        except Exception as e:
-            print(f"⚠️  Otta scraping failed: {e}")
-
-        try:
-            all_results['MARKETING'].extend(self.scrape_reed('MARKETING', marketing_keywords))
-        except Exception as e:
-            print(f"⚠️  Reed scraping failed: {e}")
-
-        try:
-            all_results['MARKETING'].extend(self.scrape_cv_library('MARKETING', marketing_keywords))
-        except Exception as e:
-            print(f"⚠️  CV Library scraping failed: {e}")
-
-        try:
-            all_results['MARKETING'].extend(self.scrape_totaljobs('MARKETING', marketing_keywords))
-        except Exception as e:
-            print(f"⚠️  TotalJobs scraping failed: {e}")
-
-        try:
-            all_results['MARKETING'].extend(self.scrape_linkedin_uk('MARKETING', marketing_keywords))
-        except Exception as e:
-            print(f"⚠️  LinkedIn scraping failed: {e}")
-
-        try:
-            all_results['MARKETING'].extend(self.scrape_indeed_uk('MARKETING', marketing_keywords))
-        except Exception as e:
-            print(f"⚠️  Indeed scraping failed: {e}")
-
-        # PhD
-        print("\n" + "=" * 60)
-        print("PHD POSITIONS")
-        print("=" * 60)
-
-        try:
-            all_results['PHD'].extend(self.scrape_findaphd())
-        except Exception as e:
-            print(f"⚠️  FindAPhD scraping failed: {e}")
-
-        try:
-            all_results['PHD'].extend(self.scrape_jobs_ac_uk())
-        except Exception as e:
-            print(f"⚠️  Jobs.ac.uk scraping failed: {e}")
-
-        # Teaching
-        print("\n" + "=" * 60)
-        print("TEACHING JOBS")
-        print("=" * 60)
-
-        teaching_keywords = ['Maths Teacher', 'Business Teacher', 'Mathematics', 'Secondary Teacher']
-
-        try:
-            all_results['TEACHING'].extend(self.scrape_tes(teaching_keywords))
-        except Exception as e:
-            print(f"⚠️  TES scraping failed: {e}")
-
+        # Step 1: Scrape DfE Teaching Vacancies (Government site)
+        print("\n🔍 Step 1: Scraping DfE Teaching Vacancies...")
         try:
             all_results['TEACHING'].extend(self.scrape_teaching_vacancies())
         except Exception as e:
             print(f"⚠️  Teaching Vacancies scraping failed: {e}")
+
+        # MANDATORY DELAY: Wait 5 seconds before next scraper
+        print("⏱️  Waiting 5 seconds before next scraper (concurrency prevention)...")
+        time.sleep(5)
+
+        # Step 2: Scrape TES (Sequential - one keyword at a time)
+        print("\n🔍 Step 2: Scraping TES for teaching keywords...")
+        for i, keyword in enumerate(teaching_keywords, 1):
+            print(f"   [{i}/{len(teaching_keywords)}] Searching TES for: {keyword}")
+            try:
+                jobs = self.scrape_tes([keyword])
+                all_results['TEACHING'].extend(jobs)
+                print(f"   ✓ Found {len(jobs)} jobs for '{keyword}'")
+            except Exception as e:
+                print(f"   ⚠️  TES scraping failed for '{keyword}': {e}")
+
+            # MANDATORY DELAY between keywords
+            if i < len(teaching_keywords):
+                print(f"   ⏱️  Waiting 5 seconds before next keyword...")
+                time.sleep(5)
 
         # Summary
         print("\n" + "=" * 60)
@@ -871,21 +898,17 @@ class UKJobScrapers:
         for field, jobs in all_results.items():
             count = len(jobs)
             total_all += count
-            print(f"  {field}: {count} jobs found")
+            if count > 0:
+                print(f"  {field}: {count} jobs found")
 
-        print(f"\n  TOTAL: {total_all} jobs across all fields")
+        print(f"\n  TOTAL: {total_all} jobs (Teaching only)")
         print("\n  Job Portals Scraped:")
-        print("    ✓ Otta (Startups/Tech)")
-        print("    ✓ Reed UK (General)")
-        print("    ✓ CV Library (General)")
-        print("    ✓ TotalJobs (General)")
-        print("    ✓ CWJobs (Tech/IT)")
-        print("    ✓ LinkedIn UK (May be blocked)")
-        print("    ✓ Indeed UK (May be blocked)")
-        print("    ✓ FindAPhD (PhD only)")
-        print("    ✓ Jobs.ac.uk (Academia)")
-        print("    ✓ TES (Teaching)")
-        print("    ✓ Gov Teaching Vacancies (Teaching)")
+        print("    ✓ DfE Teaching Vacancies (Government)")
+        print("    ✓ TES (Times Educational Supplement)")
+        print("\n  DEACTIVATED Portals:")
+        print("    ⏸  AI_ENGINEER (all sources)")
+        print("    ⏸  MARKETING (all sources)")
+        print("    ⏸  PHD (all sources)")
         print("=" * 60)
 
         return all_results
